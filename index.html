@@ -1,0 +1,63 @@
+<textarea id="obs" placeholder="Daños, faltantes..."></textarea>
+        </div>
+    </div>
+    <div class="footer">
+        <div class="action-buttons">
+            <button class="btn btn-excel" onclick="exportExcel()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg> Excel
+            </button>
+            <button class="btn btn-pdf" onclick="exportPDF()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg> PDF
+            </button>
+        </div>
+        <button class="btn btn-clear" onclick="clearForm()">Limpiar Formulario</button>
+    </div>
+    <div class="tagline">Logística · Control de inventario</div>
+</div>
+
+<script>
+    document.getElementById('fecha').valueAsDate = new Date();
+
+    function getData() {
+        const total = parseInt(document.getElementById('total').value) || 0;
+        const descargadas = parseInt(document.getElementById('descargadas').value) || 0;
+        const cargadas = parseInt(document.getElementById('cargadas').value) || 0;
+        
+        return {
+            origen: document.getElementById('origen').value.trim(),
+            destino: document.getElementById('destino').value.trim(),
+            fecha: document.getElementById('fecha').value,
+            total,
+            descargadas,
+            cargadas,
+            restante: total - descargadas - cargadas,
+            obs: document.getElementById('obs').value.trim()
+        };
+    }
+
+    // El resto de tus funciones lógicas se mantienen idénticas
+    function updateSummary() {
+        const d = getData();
+        document.getElementById('s-total').textContent = d.total || '—';
+        document.getElementById('s-cargadas').textContent = d.cargadas || '—';
+        document.getElementById('s-restante').textContent = document.getElementById('total').value ? d.restante : '—';
+        document.getElementById('diff-block').classList.toggle('negative', d.restante < 0);
+    }
+
+    function clearForm() {
+        ['origen','destino','total','descargadas','cargadas','obs'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('fecha').valueAsDate = new Date();
+        updateSummary();
+    }
+
+    function exportExcel() {
+        const d = getData();
+        if (!d.origen) { alert('Por favor, ingresa el contenedor de origen.'); return; }
+        const rows = [
+            ['TRANSFERENCIA DE CONTENEDOR'], [],
+            ['Contenedor Origen', d.origen], ['Contenedor Destino', d.destino || '—'], ['Fecha', d.fecha], [],
+            ['MOVIMIENTO DE CAJAS'], ['Cajas de origen', d.total], ['Se descargaron', d.descargadas], ['Se cargaron a otro contenedor', d.cargadas], ['Restante en Origen', d.restante], [],
+            ['Observaciones', d.obs || '—']
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [{ wch: 32 }, { wch: 20 }];
